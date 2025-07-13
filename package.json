@@ -1,12 +1,15 @@
 {
-  "name": "my-v0-project",
+  "name": "family-tree-app",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "next build",
     "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
     "lint": "next lint",
-    "start": "next start"
+    "export": "next build && next export",
+    "build:standalone": "next build && next export",
+    "deploy": "npm run build && npm run start"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -76,5 +79,9 @@
     "postcss": "^8.5",
     "tailwindcss": "^3.4.17",
     "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   }
 }
