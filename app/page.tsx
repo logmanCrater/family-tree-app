@@ -16,7 +16,7 @@ export default function Home() {
       
       {/* Content */}
       <div className="relative z-10">
-        <Header />
+            <Header />
         
         <main className="container mx-auto px-4 py-8">
           <div className="glass rounded-2xl shadow-2xl border border-white/30 overflow-hidden">
@@ -25,7 +25,7 @@ export default function Home() {
             </div>
           </div>
         </main>
-      </div>
-    </div>
+          </div>
+        </div>
   );
 }

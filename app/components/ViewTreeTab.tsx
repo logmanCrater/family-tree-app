@@ -76,27 +76,27 @@ export default function ViewTreeTab() {
                 </div>
               </div>
               <Badge variant="secondary" className="bg-white/80 dark:bg-slate-800/80">
-                Nəsil {generation + 1}
+            Nəsil {generation + 1}
               </Badge>
-            </div>
+          </div>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                 <Calendar className="w-4 h-4" />
                 <span>{formatDate(member.birthDate)}</span>
-              </div>
+          </div>
               <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                 <GitBranch className="w-4 h-4" />
                 <span>{children.length} uşaq</span>
-              </div>
-            </div>
+          </div>
+        </div>
           </CardContent>
         </Card>
 
         {children.length > 0 && (
           <div className="ml-8 mt-4 border-l-2 border-slate-200 dark:border-slate-700 pl-6">
-            {children.map((child) => renderMemberTree(child, generation + 1))}
+        {children.map((child) => renderMemberTree(child, generation + 1))}
           </div>
         )}
       </div>
@@ -154,16 +154,16 @@ export default function ViewTreeTab() {
         <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0">
           <CardContent className="p-6 text-center">
             <GitBranch className="w-8 h-8 mx-auto mb-3 opacity-80" />
-            <div className="text-3xl font-bold">{maxGeneration + 1}</div>
-            <div className="text-green-100">Nəsillər</div>
+          <div className="text-3xl font-bold">{maxGeneration + 1}</div>
+          <div className="text-green-100">Nəsillər</div>
           </CardContent>
         </Card>
         
         <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0">
           <CardContent className="p-6 text-center">
             <UserCheck className="w-8 h-8 mx-auto mb-3 opacity-80" />
-            <div className="text-3xl font-bold">{rootMembers.length}</div>
-            <div className="text-purple-100">Başlanğıc Üzvlər</div>
+          <div className="text-3xl font-bold">{rootMembers.length}</div>
+          <div className="text-purple-100">Başlanğıc Üzvlər</div>
           </CardContent>
         </Card>
       </div>
@@ -177,7 +177,7 @@ export default function ViewTreeTab() {
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[600px] w-full rounded-md border p-4">
-            {rootMembers.map((root) => renderMemberTree(root, 0))}
+        {rootMembers.map((root) => renderMemberTree(root, 0))}
           </ScrollArea>
         </CardContent>
       </Card>

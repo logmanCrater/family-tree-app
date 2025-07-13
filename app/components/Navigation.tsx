@@ -44,7 +44,7 @@ export default function Navigation({ activeTab, setActiveTab }: NavigationProps)
             const Icon = tab.icon
             return (
               <TabsTrigger
-                key={tab.id}
+          key={tab.id}
                 value={tab.id}
                 className="flex flex-col items-center gap-2 p-4 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-lg rounded-lg transition-all duration-200"
               >

@@ -105,32 +105,32 @@ export default function AddMemberTab() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="name">Tam Ad</Label>
               <Input
                 id="name"
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Tam adı daxil edin"
-                required
-              />
-            </div>
+            type="text"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            placeholder="Tam adı daxil edin"
+            required
+          />
+        </div>
 
             <div className="space-y-2">
               <Label>Doğum Tarixi</Label>
-              <DatePicker
-                value={formData.birthDate}
-                onChange={(date) => setFormData({ ...formData, birthDate: date })}
-                placeholder="Doğum tarixini seçin"
-              />
-            </div>
+          <DatePicker
+            value={formData.birthDate}
+            onChange={(date) => setFormData({ ...formData, birthDate: date })}
+            placeholder="Doğum tarixini seçin"
+          />
+        </div>
 
             <div className="space-y-2">
               <Label htmlFor="gender">Cins</Label>
               <Select
-                value={formData.gender}
+            value={formData.gender}
                 onValueChange={(value) => setFormData({ ...formData, gender: value as "male" | "female" | "other" })}
               >
                 <SelectTrigger>
@@ -142,15 +142,15 @@ export default function AddMemberTab() {
                   <SelectItem value="other">Digər</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+        </div>
 
             <div className="space-y-2">
               <Label htmlFor="relationshipType">Əlaqə Növü</Label>
               <Select
-                value={formData.relationshipType}
+            value={formData.relationshipType}
                 onValueChange={(value) =>
                   setFormData({ ...formData, relationshipType: value as "starter" | "child", parentId: null })
-                }
+            }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Əlaqə növünü seçin" />
@@ -160,36 +160,36 @@ export default function AddMemberTab() {
                   <SelectItem value="child">Uşaq</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+        </div>
 
-            {formData.relationshipType === "child" && (
+        {formData.relationshipType === "child" && (
               <div className="space-y-2">
                 <Label htmlFor="parentId">Valideyn Seçin</Label>
                 <Select
                   value={formData.parentId?.toString() || ""}
                   onValueChange={(value) =>
                     setFormData({ ...formData, parentId: value ? Number.parseInt(value) : null })
-                  }
+              }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Valideyn seçin..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {familyMembers.map((member) => (
+              {familyMembers.map((member) => (
                       <SelectItem key={member.id} value={member.id.toString()}>
-                        {member.name} ({member.gender === "male" ? "Kişi" : member.gender === "female" ? "Qadın" : "Digər"})
+                  {member.name} ({member.gender === "male" ? "Kişi" : member.gender === "female" ? "Qadın" : "Digər"})
                       </SelectItem>
-                    ))}
+              ))}
                   </SelectContent>
                 </Select>
-              </div>
-            )}
+          </div>
+        )}
 
             <Button type="submit" className="w-full" size="lg">
               <UserPlus className="w-4 h-4 mr-2" />
-              Üzv Əlavə Et
+          Üzv Əlavə Et
             </Button>
-          </form>
+      </form>
         </CardContent>
       </Card>
     </div>
