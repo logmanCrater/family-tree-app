@@ -1,30 +1,26 @@
 # Family Tree App - Deployment Guide
 
-This guide provides multiple deployment options that avoid SWC (Speedy Web Compiler) issues and use PlanetScale as the serverless database.
+This guide provides multiple deployment options that avoid SWC (Speedy Web Compiler) issues and use Neon PostgreSQL as the serverless database.
 
-## 🗄️ Database Setup (PlanetScale)
+## 🗄️ Database Setup (Neon PostgreSQL)
 
-### Step 1: Create PlanetScale Account
-1. Go to [planetscale.com](https://planetscale.com)
+### Step 1: Create Neon Account
+1. Go to [neon.tech](https://neon.tech)
 2. Sign up for a free account
 3. Create a new database
 
-### Step 2: Get Database Credentials
-1. In your PlanetScale dashboard, go to your database
-2. Click "Connect" → "Connect with Prisma"
-3. Copy the connection details:
-   - Host: `aws.connect.psdb.cloud`
-   - Username: `your_username`
-   - Password: `your_password`
-   - Database: `your_database_name`
+### Step 2: Get Database Connection String
+1. In your Neon dashboard, go to your database
+2. Click "Connection Details"
+3. Copy the connection string:
+   ```
+   postgresql://neondb_owner:npg_fBCbuZrxE50j@ep-polished-math-adb5irio-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+   ```
 
 ### Step 3: Set Environment Variables
 Create a `.env.local` file:
 ```env
-DATABASE_HOST=aws.connect.psdb.cloud
-DATABASE_USERNAME=your_username
-DATABASE_PASSWORD=your_password
-DATABASE_NAME=your_database_name
+DATABASE_URL=postgresql://neondb_owner:npg_fBCbuZrxE50j@ep-polished-math-adb5irio-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
@@ -33,7 +29,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 # Generate migration
 npm run db:generate
 
-# Apply migration to PlanetScale
+# Apply migration to Neon
 npm run db:migrate
 ```
 
@@ -43,10 +39,7 @@ npm run db:migrate
 1. **Connect your repository** to Vercel
 2. **Import the project** - Vercel will automatically detect Next.js
 3. **Add Environment Variables** in Vercel dashboard:
-   - `DATABASE_HOST`
-   - `DATABASE_USERNAME`
-   - `DATABASE_PASSWORD`
-   - `DATABASE_NAME`
+   - `DATABASE_URL`
 4. **Deploy** - The `vercel.json` configuration will handle SWC issues
 
 ### Option 2: Netlify
@@ -69,10 +62,7 @@ docker build -t family-tree-app .
 
 # Run the container with environment variables
 docker run -p 3000:3000 \
-  -e DATABASE_HOST=your_host \
-  -e DATABASE_USERNAME=your_username \
-  -e DATABASE_PASSWORD=your_password \
-  -e DATABASE_NAME=your_database \
+  -e DATABASE_URL=your_neon_connection_string \
   family-tree-app
 ```
 
@@ -82,7 +72,7 @@ docker run -p 3000:3000 \
 - Node.js 18+ 
 - npm or yarn
 - Git
-- PlanetScale database
+- Neon PostgreSQL database
 
 ### Steps
 1. **Clone the repository**:
@@ -99,7 +89,7 @@ docker run -p 3000:3000 \
 3. **Set up environment variables**:
    ```bash
    cp env.example .env.local
-   # Edit .env.local with your PlanetScale credentials
+   # Edit .env.local with your Neon connection string
    ```
 
 4. **Run database migrations**:
@@ -126,7 +116,7 @@ The app is configured to avoid SWC issues:
 - **Babel configuration** in `.babelrc`
 - **Standalone output** for better server compatibility
 - **Webpack fallbacks** for Node.js modules
-- **PlanetScale MySQL** for serverless database
+- **Neon PostgreSQL** for serverless database
 
 ## 🐳 Docker Compose (Optional)
 
@@ -141,10 +131,7 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - DATABASE_HOST=${DATABASE_HOST}
-      - DATABASE_USERNAME=${DATABASE_USERNAME}
-      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
-      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_URL=${DATABASE_URL}
     env_file:
       - .env.local
 ```
@@ -158,7 +145,7 @@ services:
    - Check that `next.config.js` has `swcMinify: false`
 
 2. **Database Connection Issues**:
-   - Verify PlanetScale credentials in environment variables
+   - Verify Neon connection string in environment variables
    - Check if database exists and is accessible
    - Ensure migrations have been run
 
@@ -182,7 +169,7 @@ services:
    ```
 
 2. **Connection Timeouts**:
-   - Check PlanetScale dashboard for connection limits
+   - Check Neon dashboard for connection limits
    - Verify network connectivity
    - Check if database is in maintenance mode
 
@@ -191,13 +178,13 @@ services:
 1. **Enable compression** on your server
 2. **Use a CDN** for static assets
 3. **Configure caching** headers
-4. **Monitor database connections** - PlanetScale has connection limits
+4. **Monitor database connections** - Neon has connection limits
 
 ## 📊 Monitoring
 
 - **Health check endpoint**: `/api/health`
-- **Database status**: Check PlanetScale dashboard
-- **Connection usage**: Monitor in PlanetScale dashboard
+- **Database status**: Check Neon dashboard
+- **Connection usage**: Monitor in Neon dashboard
 - **Memory usage**: Monitor Node.js process memory
 
 ## 🔒 Security
@@ -205,7 +192,7 @@ services:
 - **HTTPS**: Always use HTTPS in production
 - **Headers**: Security headers are configured in `next.config.js`
 - **Environment variables**: Never commit sensitive data
-- **Database**: Use PlanetScale's built-in security features
+- **Database**: Use Neon's built-in security features
 - **Connection strings**: Keep database credentials secure
 
 ## 📈 Scaling
@@ -214,7 +201,7 @@ For high-traffic deployments:
 
 1. **Use a reverse proxy** (nginx, Apache)
 2. **Implement caching** (Redis, Memcached)
-3. **Upgrade PlanetScale plan** for more connections
+3. **Upgrade Neon plan** for more connections
 4. **Load balancing** for multiple instances
 
 ## 🆘 Support
@@ -224,9 +211,9 @@ If you encounter issues:
 1. Check the browser console for errors
 2. Review server logs
 3. Verify environment variables
-4. Check PlanetScale dashboard for database issues
+4. Check Neon dashboard for database issues
 5. Test with a fresh build
 
 ---
 
-**Note**: This app is optimized for deployment without SWC and uses PlanetScale for serverless database functionality. 
+**Note**: This app is optimized for deployment without SWC and uses Neon PostgreSQL for serverless database functionality. 
