@@ -118,11 +118,11 @@ export const getIndividualProfile = async (id: number) => {
     .where(eq(relationships.parentId, id));
 
   // Get marriages
-  const marriages = await db.select().from(marriages)
+  const individualMarriages = await db.select().from(marriages)
     .where(or(eq(marriages.spouse1Id, id), eq(marriages.spouse2Id, id)));
 
   // Get events
-  const events = await db.select().from(events)
+  const individualEvents = await db.select().from(events)
     .where(eq(events.individualId, id))
     .orderBy(desc(events.eventDate));
 
@@ -130,8 +130,8 @@ export const getIndividualProfile = async (id: number) => {
     ...individual[0],
     parents: parentRelations,
     children: childRelations,
-    marriages,
-    events,
+    marriages: individualMarriages,
+    events: individualEvents,
   };
 };
 
@@ -388,3 +388,5 @@ export const deleteSource = async (id: number) => {
   const result = await db.delete(sources).where(eq(sources.id, id));
   return result;
 }; 
+
+export { addRelationship as addParentChildRelation }; 

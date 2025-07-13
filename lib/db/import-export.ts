@@ -139,12 +139,12 @@ export const exportToGEDCOM = async (): Promise<string> => {
 /**
  * Format date for GEDCOM (DD MMM YYYY format)
  */
-const formatDateForGEDCOM = (dateString: string): string => {
-  const date = new Date(dateString);
+const formatDateForGEDCOM = (date: Date | string): string => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
   const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-  const day = date.getDate().toString().padStart(2, '0');
-  const month = months[date.getMonth()];
-  const year = date.getFullYear();
+  const day = dateObj.getDate().toString().padStart(2, '0');
+  const month = months[dateObj.getMonth()];
+  const year = dateObj.getFullYear();
   return `${day} ${month} ${year}`;
 };
 
@@ -265,7 +265,7 @@ export const importFromGEDCOM = async (gedcomData: string): Promise<{ success: b
 
   try {
     const lines = gedcomData.split('\n');
-    const individuals: any[] = [];
+    const gedcomIndividuals: any[] = [];
     const families: any[] = [];
     let currentRecord: any = null;
     let currentLevel = 0;
@@ -284,7 +284,7 @@ export const importFromGEDCOM = async (gedcomData: string): Promise<{ success: b
         if (tag.startsWith('@I')) {
           // Individual record
           currentRecord = { id: tag.slice(2, -1), type: 'individual', name: '', gender: 'unknown' };
-          individuals.push(currentRecord);
+          gedcomIndividuals.push(currentRecord);
         } else if (tag.startsWith('@F')) {
           // Family record
           currentRecord = { id: tag.slice(2, -1), type: 'family', husband: '', wife: '', children: [] };
@@ -336,7 +336,7 @@ export const importFromGEDCOM = async (gedcomData: string): Promise<{ success: b
     }
 
     // Import individuals
-    for (const individual of individuals) {
+    for (const individual of gedcomIndividuals) {
       try {
         const nameParts = individual.name.split('/');
         const firstName = nameParts[0]?.trim() || '';
