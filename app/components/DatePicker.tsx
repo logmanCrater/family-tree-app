@@ -56,7 +56,6 @@ export default function DatePicker({ value, onChange, placeholder = "Tarix seçi
           mode="single"
           selected={selectedDate}
           onSelect={handleDateSelect}
-          initialFocus
           disabled={(date) => date > new Date()}
           locale={az}
           />
