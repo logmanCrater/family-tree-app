@@ -2,20 +2,13 @@ import { db } from './index';
 import { 
   individuals, 
   marriages, 
-  parentChildRelations, 
+  relationships, 
   events, 
   sources, 
   media,
-  mediaLinks,
-  sourceCitations,
-  type Individual,
-  type Marriage,
-  type ParentChildRelation,
-  type Event,
-  type Source,
-  type Media
+  individualMedia,
+  individualSources
 } from './schema';
-import { addIndividualWithValidation, addMarriageWithValidation, addParentChildRelationWithValidation } from './validation';
 
 // ============================================================================
 // EXPORT UTILITIES
@@ -29,12 +22,12 @@ export const exportToJSON = async (): Promise<string> => {
     // Fetch all data from database
     const allIndividuals = await db.select().from(individuals);
     const allMarriages = await db.select().from(marriages);
-    const allParentChildRelations = await db.select().from(parentChildRelations);
+    const allRelationships = await db.select().from(relationships);
     const allEvents = await db.select().from(events);
     const allSources = await db.select().from(sources);
     const allMedia = await db.select().from(media);
-    const allMediaLinks = await db.select().from(mediaLinks);
-    const allSourceCitations = await db.select().from(sourceCitations);
+    const allMediaLinks = await db.select().from(individualMedia);
+    const allSourceCitations = await db.select().from(individualSources);
 
     const exportData = {
       version: '1.0',
@@ -42,7 +35,7 @@ export const exportToJSON = async (): Promise<string> => {
       data: {
         individuals: allIndividuals,
         marriages: allMarriages,
-        parentChildRelations: allParentChildRelations,
+        relationships: allRelationships,
         events: allEvents,
         sources: allSources,
         media: allMedia,
@@ -64,7 +57,7 @@ export const exportToGEDCOM = async (): Promise<string> => {
   try {
     const allIndividuals = await db.select().from(individuals);
     const allMarriages = await db.select().from(marriages);
-    const allParentChildRelations = await db.select().from(parentChildRelations);
+    const allRelationships = await db.select().from(relationships);
     const allEvents = await db.select().from(events);
 
     let gedcom = '0 HEAD\n1 GEDC\n2 VERS 5.5.1\n2 FORM LINEAGE-LINKED\n1 CHAR UTF-8\n1 SOUR Family Tree App\n\n';
@@ -77,12 +70,8 @@ export const exportToGEDCOM = async (): Promise<string> => {
       if (individual.middleName) {
         gedcom += `2 GIVN ${individual.firstName} ${individual.middleName}\n`;
       }
-      
-      if (individual.maidenName) {
-        gedcom += `2 SURN ${individual.maidenName}\n`;
-      }
 
-      if (individual.gender !== 'unknown') {
+      if (individual.gender) {
         gedcom += `1 SEX ${individual.gender.toUpperCase()}\n`;
       }
 
@@ -128,7 +117,7 @@ export const exportToGEDCOM = async (): Promise<string> => {
       }
 
       // Add children
-      const children = allParentChildRelations.filter(rel => rel.marriageId === marriage.id);
+      const children = allRelationships.filter(rel => rel.parentId === marriage.spouse1Id || rel.parentId === marriage.spouse2Id);
       for (const child of children) {
         gedcom += `1 CHIL @I${child.childId}@\n`;
       }
@@ -183,27 +172,21 @@ export const importFromJSON = async (jsonData: string): Promise<{ success: boole
     if (data.data.individuals) {
       for (const individual of data.data.individuals) {
         try {
-          const { success, errors: individualErrors } = await addIndividualWithValidation({
+          // Add individual using operations
+          await db.insert(individuals).values({
             firstName: individual.firstName,
             lastName: individual.lastName,
             middleName: individual.middleName,
-            maidenName: individual.maidenName,
             gender: individual.gender,
-            birthDate: individual.birthDate,
+            birthDate: individual.birthDate ? new Date(individual.birthDate) : null,
             birthPlace: individual.birthPlace,
-            deathDate: individual.deathDate,
+            deathDate: individual.deathDate ? new Date(individual.deathDate) : null,
             deathPlace: individual.deathPlace,
             isLiving: individual.isLiving,
-            isPrivate: individual.isPrivate,
             photoUrl: individual.photoUrl,
             notes: individual.notes,
           });
-
-          if (success) {
-            importedIndividuals++;
-          } else {
-            errors.push(`Individual ${individual.firstName} ${individual.lastName}: ${individualErrors.join(', ')}`);
-          }
+          importedIndividuals++;
         } catch (error) {
           errors.push(`Individual ${individual.firstName} ${individual.lastName}: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
@@ -214,49 +197,37 @@ export const importFromJSON = async (jsonData: string): Promise<{ success: boole
     if (data.data.marriages) {
       for (const marriage of data.data.marriages) {
         try {
-          const { success, errors: marriageErrors } = await addMarriageWithValidation({
+          await db.insert(marriages).values({
             spouse1Id: marriage.spouse1Id,
             spouse2Id: marriage.spouse2Id,
-            marriageDate: marriage.marriageDate,
+            marriageDate: marriage.marriageDate ? new Date(marriage.marriageDate) : null,
             marriagePlace: marriage.marriagePlace,
-            divorceDate: marriage.divorceDate,
+            divorceDate: marriage.divorceDate ? new Date(marriage.divorceDate) : null,
             divorcePlace: marriage.divorcePlace,
             isActive: marriage.isActive,
-            marriageType: marriage.marriageType,
             notes: marriage.notes,
           });
-
-          if (success) {
-            importedMarriages++;
-          } else {
-            errors.push(`Marriage ${marriage.id}: ${marriageErrors.join(', ')}`);
-          }
+          importedMarriages++;
         } catch (error) {
           errors.push(`Marriage ${marriage.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       }
     }
 
-    // Import parent-child relations
-    if (data.data.parentChildRelations) {
-      for (const relation of data.data.parentChildRelations) {
+    // Import relationships
+    if (data.data.relationships) {
+      for (const relation of data.data.relationships) {
         try {
-          const { success, errors: relationErrors } = await addParentChildRelationWithValidation({
+          await db.insert(relationships).values({
             childId: relation.childId,
             parentId: relation.parentId,
-            marriageId: relation.marriageId,
             relationshipType: relation.relationshipType,
-            isPrimaryParent: relation.isPrimaryParent,
+            isPrimary: relation.isPrimary,
             notes: relation.notes,
           });
-
-          if (success) {
-            importedRelations++;
-          } else {
-            errors.push(`Parent-child relation ${relation.id}: ${relationErrors.join(', ')}`);
-          }
+          importedRelations++;
         } catch (error) {
-          errors.push(`Parent-child relation ${relation.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          errors.push(`Relationship ${relation.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       }
     }
@@ -372,22 +343,18 @@ export const importFromGEDCOM = async (gedcomData: string): Promise<{ success: b
         const lastName = nameParts[1]?.trim() || '';
 
         if (firstName && lastName) {
-          const { success, errors: individualErrors } = await addIndividualWithValidation({
+          // Add individual using operations
+          await db.insert(individuals).values({
             firstName,
             lastName,
             gender: individual.gender,
-            birthDate: individual.birthDate,
+            birthDate: individual.birthDate ? new Date(individual.birthDate) : null,
             birthPlace: individual.birthPlace,
-            deathDate: individual.deathDate,
+            deathDate: individual.deathDate ? new Date(individual.deathDate) : null,
             deathPlace: individual.deathPlace,
             isLiving: !individual.deathDate,
           });
-
-          if (success) {
-            importedIndividuals++;
-          } else {
-            errors.push(`Individual ${firstName} ${lastName}: ${individualErrors.join(', ')}`);
-          }
+          importedIndividuals++;
         }
       } catch (error) {
         errors.push(`Individual ${individual.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -399,49 +366,36 @@ export const importFromGEDCOM = async (gedcomData: string): Promise<{ success: b
       try {
         if (family.husband && family.wife) {
           // Add marriage
-          const { success, errors: marriageErrors } = await addMarriageWithValidation({
+          await db.insert(marriages).values({
             spouse1Id: parseInt(family.husband),
             spouse2Id: parseInt(family.wife),
-            marriageDate: family.marriageDate,
+            marriageDate: family.marriageDate ? new Date(family.marriageDate) : null,
             marriagePlace: family.marriagePlace,
           });
-
-          if (success) {
-            importedMarriages++;
-          } else {
-            errors.push(`Family ${family.id}: ${marriageErrors.join(', ')}`);
-          }
+          importedMarriages++;
         }
 
         // Add parent-child relations
         for (const childId of family.children) {
           try {
             if (family.husband) {
-              const { success, errors: relationErrors } = await addParentChildRelationWithValidation({
+              await db.insert(relationships).values({
                 childId: parseInt(childId),
                 parentId: parseInt(family.husband),
                 relationshipType: 'biological',
+                isPrimary: true,
               });
-
-              if (success) {
-                importedRelations++;
-              } else {
-                errors.push(`Parent-child relation ${family.husband}-${childId}: ${relationErrors.join(', ')}`);
-              }
+              importedRelations++;
             }
 
             if (family.wife) {
-              const { success, errors: relationErrors } = await addParentChildRelationWithValidation({
+              await db.insert(relationships).values({
                 childId: parseInt(childId),
                 parentId: parseInt(family.wife),
                 relationshipType: 'biological',
+                isPrimary: true,
               });
-
-              if (success) {
-                importedRelations++;
-              } else {
-                errors.push(`Parent-child relation ${family.wife}-${childId}: ${relationErrors.join(', ')}`);
-              }
+              importedRelations++;
             }
           } catch (error) {
             errors.push(`Parent-child relation for child ${childId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
