@@ -59,7 +59,7 @@ export default function DatePicker({ value, onChange, placeholder = "Tarix seçi
           initialFocus
           disabled={(date) => date > new Date()}
           locale={az}
-        />
+          />
       </PopoverContent>
     </Popover>
   )

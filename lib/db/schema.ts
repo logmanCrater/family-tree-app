@@ -1,143 +1,155 @@
-import { sqliteTable, text, integer, real, blob } from 'drizzle-orm/sqlite-core';
-import { sql } from 'drizzle-orm';
+import { mysqlTable, varchar, text, datetime, boolean, int, index, primaryKey } from 'drizzle-orm/mysql-core';
 import { relations } from 'drizzle-orm';
 
-// Individuals table - core person data
-export const individuals = sqliteTable('individuals', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  uuid: text('uuid').notNull().unique(), // For privacy and external references
-  firstName: text('first_name').notNull(),
-  lastName: text('last_name').notNull(),
-  middleName: text('middle_name'),
-  maidenName: text('maiden_name'), // For women who changed their name after marriage
-  gender: text('gender', { enum: ['male', 'female', 'other', 'unknown'] }).notNull(),
-  birthDate: text('birth_date'), // ISO date string
-  birthPlace: text('birth_place'),
-  deathDate: text('death_date'), // ISO date string
-  deathPlace: text('death_place'),
-  isLiving: integer('is_living', { mode: 'boolean' }).notNull().default(true),
-  isPrivate: integer('is_private', { mode: 'boolean' }).notNull().default(false),
+// Individuals table
+export const individuals = mysqlTable('individuals', {
+  id: int('id').primaryKey().autoincrement(),
+  firstName: varchar('first_name', { length: 100 }).notNull(),
+  lastName: varchar('last_name', { length: 100 }).notNull(),
+  middleName: varchar('middle_name', { length: 100 }),
   photoUrl: text('photo_url'),
+  birthDate: datetime('birth_date'),
+  deathDate: datetime('death_date'),
+  birthPlace: varchar('birth_place', { length: 255 }),
+  deathPlace: varchar('death_place', { length: 255 }),
+  isLiving: boolean('is_living').notNull().default(true),
+  gender: varchar('gender', { length: 20 }),
+  email: varchar('email', { length: 255 }),
+  phone: varchar('phone', { length: 50 }),
+  address: text('address'),
   notes: text('notes'),
-  createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
-});
-
-// Marriages table - relationship between two individuals
-export const marriages = sqliteTable('marriages', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  uuid: text('uuid').notNull().unique(),
-  spouse1Id: integer('spouse1_id').notNull().references(() => individuals.id, { onDelete: 'cascade' }),
-  spouse2Id: integer('spouse2_id').notNull().references(() => individuals.id, { onDelete: 'cascade' }),
-  marriageDate: text('marriage_date'), // ISO date string
-  marriagePlace: text('marriage_place'),
-  divorceDate: text('divorce_date'), // ISO date string
-  divorcePlace: text('divorce_place'),
-  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
-  marriageType: text('marriage_type', { enum: ['civil', 'religious', 'traditional', 'other'] }).notNull().default('civil'),
-  notes: text('notes'),
-  createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
-});
-
-// Parent-child relationships table
-export const parentChildRelations = sqliteTable('parent_child_relations', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  childId: integer('child_id').notNull().references(() => individuals.id, { onDelete: 'cascade' }),
-  parentId: integer('parent_id').notNull().references(() => individuals.id, { onDelete: 'cascade' }),
-  marriageId: integer('marriage_id').references(() => marriages.id, { onDelete: 'set null' }), // Optional, for children born outside marriage
-  relationshipType: text('relationship_type', { enum: ['biological', 'adopted', 'step', 'foster', 'guardian'] }).notNull().default('biological'),
-  isPrimaryParent: integer('is_primary_parent', { mode: 'boolean' }).notNull().default(true), // For cases with multiple parents
-  notes: text('notes'),
-  createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
-});
-
-// Events table - for significant life events
-export const events = sqliteTable('events', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  uuid: text('uuid').notNull().unique(),
-  individualId: integer('individual_id').notNull().references(() => individuals.id, { onDelete: 'cascade' }),
-  eventType: text('event_type', { 
-    enum: ['birth', 'death', 'marriage', 'divorce', 'graduation', 'military_service', 'immigration', 'emigration', 'occupation_change', 'residence_change', 'other'] 
-  }).notNull(),
-  eventDate: text('event_date'), // ISO date string
-  eventPlace: text('event_place'),
-  description: text('description'),
-  isPrivate: integer('is_private', { mode: 'boolean' }).notNull().default(false),
-  createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
-});
-
-// Sources table - for genealogical research sources
-export const sources = sqliteTable('sources', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  uuid: text('uuid').notNull().unique(),
-  title: text('title').notNull(),
-  author: text('author'),
-  publicationDate: text('publication_date'),
-  sourceType: text('source_type', { 
-    enum: ['birth_certificate', 'death_certificate', 'marriage_certificate', 'census', 'newspaper', 'book', 'website', 'oral_history', 'other'] 
-  }).notNull(),
-  url: text('url'),
-  notes: text('notes'),
-  createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
-});
-
-// Source citations - linking sources to individuals/events
-export const sourceCitations = sqliteTable('source_citations', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  sourceId: integer('source_id').notNull().references(() => sources.id, { onDelete: 'cascade' }),
-  individualId: integer('individual_id').references(() => individuals.id, { onDelete: 'cascade' }),
-  eventId: integer('event_id').references(() => events.id, { onDelete: 'cascade' }),
-  marriageId: integer('marriage_id').references(() => marriages.id, { onDelete: 'cascade' }),
-  citationText: text('citation_text'),
-  pageNumber: text('page_number'),
-  createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
-});
-
-// Media files table
-export const media = sqliteTable('media', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  uuid: text('uuid').notNull().unique(),
-  fileName: text('file_name').notNull(),
-  filePath: text('file_path').notNull(),
-  fileType: text('file_type').notNull(), // 'image', 'document', 'audio', 'video'
-  fileSize: integer('file_size'),
-  mimeType: text('mime_type'),
-  description: text('description'),
-  isPrivate: integer('is_private', { mode: 'boolean' }).notNull().default(false),
-  createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
-});
-
-// Media links - connecting media to individuals/events
-export const mediaLinks = sqliteTable('media_links', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  mediaId: integer('media_id').notNull().references(() => media.id, { onDelete: 'cascade' }),
-  individualId: integer('individual_id').references(() => individuals.id, { onDelete: 'cascade' }),
-  eventId: integer('event_id').references(() => events.id, { onDelete: 'cascade' }),
-  marriageId: integer('marriage_id').references(() => marriages.id, { onDelete: 'cascade' }),
-  linkType: text('link_type', { enum: ['primary', 'secondary', 'documentation'] }).notNull().default('secondary'),
-  createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
-});
-
-// Define relationships
-export const individualsRelations = relations(individuals, ({ many, one }) => ({
-  // As a child
-  parentRelations: many(parentChildRelations, { relationName: 'child' }),
-  // As a parent
-  childRelations: many(parentChildRelations, { relationName: 'parent' }),
-  // As spouse1
-  marriagesAsSpouse1: many(marriages, { relationName: 'spouse1' }),
-  // As spouse2
-  marriagesAsSpouse2: many(marriages, { relationName: 'spouse2' }),
-  // Events
-  events: many(events),
-  // Source citations
-  sourceCitations: many(sourceCitations),
-  // Media links
-  mediaLinks: many(mediaLinks),
+  privacyLevel: int('privacy_level').notNull().default(1), // 1=public, 2=family, 3=private
+  createdAt: datetime('created_at').notNull().default(new Date()),
+  updatedAt: datetime('updated_at').notNull().default(new Date()),
+}, (table) => ({
+  nameIdx: index('name_idx').on(table.firstName, table.lastName),
+  birthDateIdx: index('birth_date_idx').on(table.birthDate),
+  isLivingIdx: index('is_living_idx').on(table.isLiving),
 }));
 
-export const marriagesRelations = relations(marriages, ({ one, many }) => ({
+// Marriages table
+export const marriages = mysqlTable('marriages', {
+  id: int('id').primaryKey().autoincrement(),
+  spouse1Id: int('spouse1_id').notNull(),
+  spouse2Id: int('spouse2_id').notNull(),
+  marriageDate: datetime('marriage_date'),
+  marriagePlace: varchar('marriage_place', { length: 255 }),
+  divorceDate: datetime('divorce_date'),
+  divorcePlace: varchar('divorce_place', { length: 255 }),
+  isActive: boolean('is_active').notNull().default(true),
+  notes: text('notes'),
+  createdAt: datetime('created_at').notNull().default(new Date()),
+  updatedAt: datetime('updated_at').notNull().default(new Date()),
+}, (table) => ({
+  spouseIdx: index('spouse_idx').on(table.spouse1Id, table.spouse2Id),
+  marriageDateIdx: index('marriage_date_idx').on(table.marriageDate),
+}));
+
+// Parent-child relationships table
+export const relationships = mysqlTable('relationships', {
+  id: int('id').primaryKey().autoincrement(),
+  parentId: int('parent_id').notNull(),
+  childId: int('child_id').notNull(),
+  relationshipType: varchar('relationship_type', { length: 50 }).notNull().default('biological'), // biological, adopted, step, foster
+  isPrimary: boolean('is_primary').notNull().default(true), // for multiple parents
+  notes: text('notes'),
+  createdAt: datetime('created_at').notNull().default(new Date()),
+}, (table) => ({
+  parentChildIdx: index('parent_child_idx').on(table.parentId, table.childId),
+  childParentIdx: index('child_parent_idx').on(table.childId, table.parentId),
+}));
+
+// Events table
+export const events = mysqlTable('events', {
+  id: int('id').primaryKey().autoincrement(),
+  individualId: int('individual_id').notNull(),
+  eventType: varchar('event_type', { length: 100 }).notNull(), // birth, death, marriage, graduation, etc.
+  eventDate: datetime('event_date'),
+  eventPlace: varchar('event_place', { length: 255 }),
+  description: text('description'),
+  notes: text('notes'),
+  createdAt: datetime('created_at').notNull().default(new Date()),
+  updatedAt: datetime('updated_at').notNull().default(new Date()),
+}, (table) => ({
+  individualEventIdx: index('individual_event_idx').on(table.individualId, table.eventType),
+  eventDateIdx: index('event_date_idx').on(table.eventDate),
+}));
+
+// Sources table
+export const sources = mysqlTable('sources', {
+  id: int('id').primaryKey().autoincrement(),
+  title: varchar('title', { length: 255 }).notNull(),
+  author: varchar('author', { length: 255 }),
+  publication: varchar('publication', { length: 255 }),
+  publicationDate: datetime('publication_date'),
+  url: text('url'),
+  notes: text('notes'),
+  sourceType: varchar('source_type', { length: 100 }).notNull().default('document'), // document, photo, video, audio, website
+  createdAt: datetime('created_at').notNull().default(new Date()),
+  updatedAt: datetime('updated_at').notNull().default(new Date()),
+}, (table) => ({
+  titleIdx: index('title_idx').on(table.title),
+  sourceTypeIdx: index('source_type_idx').on(table.sourceType),
+}));
+
+// Media table
+export const media = mysqlTable('media', {
+  id: int('id').primaryKey().autoincrement(),
+  individualId: int('individual_id'),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  fileUrl: text('file_url').notNull(),
+  fileType: varchar('file_type', { length: 50 }).notNull(), // image, video, audio, document
+  fileSize: int('file_size'),
+  uploadDate: datetime('upload_date').notNull().default(new Date()),
+  notes: text('notes'),
+  createdAt: datetime('created_at').notNull().default(new Date()),
+  updatedAt: datetime('updated_at').notNull().default(new Date()),
+}, (table) => ({
+  individualMediaIdx: index('individual_media_idx').on(table.individualId),
+  fileTypeIdx: index('file_type_idx').on(table.fileType),
+}));
+
+// Individual-Source linking table
+export const individualSources = mysqlTable('individual_sources', {
+  individualId: int('individual_id').notNull(),
+  sourceId: int('source_id').notNull(),
+  citation: text('citation'),
+  pageNumber: varchar('page_number', { length: 50 }),
+  notes: text('notes'),
+  createdAt: datetime('created_at').notNull().default(new Date()),
+}, (table) => ({
+  pk: primaryKey(table.individualId, table.sourceId),
+  individualIdx: index('individual_source_idx').on(table.individualId),
+  sourceIdx: index('source_individual_idx').on(table.sourceId),
+}));
+
+// Individual-Media linking table
+export const individualMedia = mysqlTable('individual_media', {
+  individualId: int('individual_id').notNull(),
+  mediaId: int('media_id').notNull(),
+  relationship: varchar('relationship', { length: 100 }).notNull().default('subject'), // subject, related, mentioned
+  notes: text('notes'),
+  createdAt: datetime('created_at').notNull().default(new Date()),
+}, (table) => ({
+  pk: primaryKey(table.individualId, table.mediaId),
+  individualIdx: index('individual_media_link_idx').on(table.individualId),
+  mediaIdx: index('media_individual_idx').on(table.mediaId),
+}));
+
+// Relations
+export const individualsRelations = relations(individuals, ({ many }) => ({
+  marriagesAsSpouse1: many(marriages, { relationName: 'spouse1' }),
+  marriagesAsSpouse2: many(marriages, { relationName: 'spouse2' }),
+  relationshipsAsParent: many(relationships, { relationName: 'parent' }),
+  relationshipsAsChild: many(relationships, { relationName: 'child' }),
+  events: many(events),
+  media: many(media),
+  individualSources: many(individualSources),
+  individualMedia: many(individualMedia),
+}));
+
+export const marriagesRelations = relations(marriages, ({ one }) => ({
   spouse1: one(individuals, {
     fields: [marriages.spouse1Id],
     references: [individuals.id],
@@ -148,55 +160,58 @@ export const marriagesRelations = relations(marriages, ({ one, many }) => ({
     references: [individuals.id],
     relationName: 'spouse2',
   }),
-  parentRelations: many(parentChildRelations),
-  sourceCitations: many(sourceCitations),
-  mediaLinks: many(mediaLinks),
 }));
 
-export const parentChildRelationsRelations = relations(parentChildRelations, ({ one }) => ({
-  child: one(individuals, {
-    fields: [parentChildRelations.childId],
-    references: [individuals.id],
-    relationName: 'child',
-  }),
+export const relationshipsRelations = relations(relationships, ({ one }) => ({
   parent: one(individuals, {
-    fields: [parentChildRelations.parentId],
+    fields: [relationships.parentId],
     references: [individuals.id],
     relationName: 'parent',
   }),
-  marriage: one(marriages, {
-    fields: [parentChildRelations.marriageId],
-    references: [marriages.id],
+  child: one(individuals, {
+    fields: [relationships.childId],
+    references: [individuals.id],
+    relationName: 'child',
   }),
 }));
 
-export const eventsRelations = relations(events, ({ one, many }) => ({
+export const eventsRelations = relations(events, ({ one }) => ({
   individual: one(individuals, {
     fields: [events.individualId],
     references: [individuals.id],
   }),
-  sourceCitations: many(sourceCitations),
-  mediaLinks: many(mediaLinks),
+}));
+
+export const mediaRelations = relations(media, ({ one, many }) => ({
+  individual: one(individuals, {
+    fields: [media.individualId],
+    references: [individuals.id],
+  }),
+  individualMedia: many(individualMedia),
 }));
 
 export const sourcesRelations = relations(sources, ({ many }) => ({
-  citations: many(sourceCitations),
+  individualSources: many(individualSources),
 }));
 
-export const mediaRelations = relations(media, ({ many }) => ({
-  links: many(mediaLinks),
+export const individualSourcesRelations = relations(individualSources, ({ one }) => ({
+  individual: one(individuals, {
+    fields: [individualSources.individualId],
+    references: [individuals.id],
+  }),
+  source: one(sources, {
+    fields: [individualSources.sourceId],
+    references: [sources.id],
+  }),
 }));
 
-// Type definitions for TypeScript
-export type Individual = typeof individuals.$inferSelect;
-export type NewIndividual = typeof individuals.$inferInsert;
-export type Marriage = typeof marriages.$inferSelect;
-export type NewMarriage = typeof marriages.$inferInsert;
-export type ParentChildRelation = typeof parentChildRelations.$inferSelect;
-export type NewParentChildRelation = typeof parentChildRelations.$inferInsert;
-export type Event = typeof events.$inferSelect;
-export type NewEvent = typeof events.$inferInsert;
-export type Source = typeof sources.$inferSelect;
-export type NewSource = typeof sources.$inferInsert;
-export type Media = typeof media.$inferSelect;
-export type NewMedia = typeof media.$inferInsert; 
+export const individualMediaRelations = relations(individualMedia, ({ one }) => ({
+  individual: one(individuals, {
+    fields: [individualMedia.individualId],
+    references: [individuals.id],
+  }),
+  media: one(media, {
+    fields: [individualMedia.mediaId],
+    references: [media.id],
+  }),
+})); 

@@ -1,19 +1,23 @@
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/planetscale-serverless';
+import { connect } from '@planetscale/database';
 import * as schema from './schema';
 
-// Create SQLite database instance
-const sqlite = new Database('family-tree.db');
+// Create the connection
+const connection = connect({
+  host: process.env.DATABASE_HOST,
+  username: process.env.DATABASE_USERNAME,
+  password: process.env.DATABASE_PASSWORD,
+});
 
-// Create Drizzle instance with schema
-export const db = drizzle(sqlite, { schema });
+// Create the database instance
+export const db = drizzle(connection, { schema });
 
 // Export schema for migrations
-export { schema };
+export * from './schema';
 
 // Database utilities
 export const closeDatabase = () => {
-  sqlite.close();
+  // No explicit close for PlanetScale, connection is managed by the driver
 };
 
 // Initialize database with tables (for development)
