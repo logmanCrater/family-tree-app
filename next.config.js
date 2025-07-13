@@ -1,10 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Use Babel instead of SWC for better compatibility
-  experimental: {
-    forceSwcTransforms: false,
-  },
-  
   // Optimize for server deployment
   output: 'standalone',
   
